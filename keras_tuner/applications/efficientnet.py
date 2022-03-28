@@ -97,10 +97,9 @@ class HyperEfficientNet(hypermodel.HyperModel):
             augmentation_model, (hypermodel.HyperModel, keras.Model, type(None))
         ):
             raise ValueError(
-                "Keyword augmentation_model should be "
-                "a `HyperModel`, a Keras `Model` or empty. "
-                "Received {}.".format(augmentation_model)
+                f"Keyword augmentation_model should be a `HyperModel`, a Keras `Model` or empty. Received {augmentation_model}."
             )
+
 
         if not classes:
             raise ValueError("You must specify `classes`")
@@ -135,9 +134,7 @@ class HyperEfficientNet(hypermodel.HyperModel):
             x = augmentation_model(x)
 
         # Select one of pre-trained EfficientNet as feature extractor
-        version = hp.Choice(
-            "version", ["B{}".format(i) for i in range(8)], default="B0"
-        )
+        version = hp.Choice("version", [f"B{i}" for i in range(8)], default="B0")
         img_size = EFFICIENTNET_IMG_SIZE[version]
 
         x = preprocessing.Resizing(img_size, img_size, interpolation="bilinear")(x)

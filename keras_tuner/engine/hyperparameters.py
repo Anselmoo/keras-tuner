@@ -61,7 +61,7 @@ def _check_sampling_arg(sampling, step, min_value, max_value, hp_type="int"):
 def _check_int(val, arg):
     int_val = int(val)
     if int_val != val:
-        raise ValueError(arg + " must be an int, found: " + str(val))
+        raise ValueError(f'{arg} must be an int, found: {str(val)}')
     return int_val
 
 
@@ -127,7 +127,7 @@ class Choice(HyperParameter):
             raise ValueError("`values` must be provided.")
 
         # Type checking.
-        types = set(type(v) for v in values)
+        types = {type(v) for v in values}
         if len(types) > 1:
             raise TypeError(
                 "A `Choice` can contain only one type of value, found "
@@ -167,16 +167,12 @@ class Choice(HyperParameter):
             self.ordered = is_numeric
 
     def __repr__(self):
-        return 'Choice(name: "{}", values: {}, ordered: {}, default: {})'.format(
-            self.name, self.values, self.ordered, self.default
-        )
+        return f'Choice(name: "{self.name}", values: {self.values}, ordered: {self.ordered}, default: {self.default})'
 
     @property
     def default(self):
         if self._default is None:
-            if None in self.values:
-                return None
-            return self.values[0]
+            return None if None in self.values else self.values[0]
         return self._default
 
     def random_sample(self, seed=None):
@@ -263,17 +259,7 @@ class Int(HyperParameter):
         )
 
     def __repr__(self):
-        return (
-            'Int(name: "{}", min_value: {}, max_value: {}, step: {}, '
-            "sampling: {}, default: {})"
-        ).format(
-            self.name,
-            self.min_value,
-            self.max_value,
-            self.step,
-            self.sampling,
-            self.default,
-        )
+        return f'Int(name: "{self.name}", min_value: {self.min_value}, max_value: {self.max_value}, step: {self.step}, sampling: {self.sampling}, default: {self.default})'
 
     def random_sample(self, seed=None):
         random_state = random.Random(seed)
@@ -282,9 +268,7 @@ class Int(HyperParameter):
 
     @property
     def default(self):
-        if self._default is not None:
-            return self._default
-        return self.min_value
+        return self._default if self._default is not None else self.min_value
 
     def get_config(self):
         config = super(Int, self).get_config()
@@ -304,7 +288,7 @@ class Int(HyperParameter):
             name=proto.name,
             min_value=proto.min_value,
             max_value=proto.max_value,
-            step=proto.step if proto.step else None,
+            step=proto.step or None,
             sampling=_sampling_from_proto(proto.sampling),
             default=proto.default,
             conditions=conditions,
@@ -355,32 +339,17 @@ class Float(HyperParameter):
         super(Float, self).__init__(name=name, default=default, **kwargs)
         self.max_value = float(max_value)
         self.min_value = float(min_value)
-        if step is not None:
-            self.step = float(step)
-        else:
-            self.step = None
+        self.step = float(step) if step is not None else None
         self.sampling = _check_sampling_arg(
             sampling, step, min_value, max_value, hp_type="float"
         )
 
     def __repr__(self):
-        return (
-            'Float(name: "{}", min_value: {}, max_value: {}, step: {}, '
-            "sampling: {}, default: {})"
-        ).format(
-            self.name,
-            self.min_value,
-            self.max_value,
-            self.step,
-            self.sampling,
-            self.default,
-        )
+        return f'Float(name: "{self.name}", min_value: {self.min_value}, max_value: {self.max_value}, step: {self.step}, sampling: {self.sampling}, default: {self.default})'
 
     @property
     def default(self):
-        if self._default is not None:
-            return self._default
-        return self.min_value
+        return self._default if self._default is not None else self.min_value
 
     def random_sample(self, seed=None):
         random_state = random.Random(seed)
@@ -404,7 +373,7 @@ class Float(HyperParameter):
             name=proto.name,
             min_value=proto.min_value,
             max_value=proto.max_value,
-            step=proto.step if proto.step else None,
+            step=proto.step or None,
             sampling=_sampling_from_proto(proto.sampling),
             default=proto.default,
             conditions=conditions,
@@ -441,7 +410,7 @@ class Boolean(HyperParameter):
             )
 
     def __repr__(self):
-        return 'Boolean(name: "{}", default: {})'.format(self.name, self.default)
+        return f'Boolean(name: "{self.name}", default: {self.default})'
 
     def random_sample(self, seed=None):
         random_state = random.Random(seed)
@@ -483,13 +452,13 @@ class Fixed(HyperParameter):
             value = str(value)
         elif not isinstance(value, (float, str)):
             raise ValueError(
-                "`Fixed` value must be an `int`, `float`, `str`, "
-                "or `bool`, found {}".format(value)
+                f"`Fixed` value must be an `int`, `float`, `str`, or `bool`, found {value}"
             )
+
         self.value = value
 
     def __repr__(self):
-        return "Fixed(name: {}, value: {})".format(self.name, self.value)
+        return f"Fixed(name: {self.name}, value: {self.value})"
 
     def random_sample(self, seed=None):
         return self.value
@@ -625,9 +594,7 @@ class HyperParameters(object):
         """
         parent_name = self._get_name(parent_name)  # Add name_scopes.
         if not self._exists(parent_name):
-            raise ValueError(
-                "`HyperParameter` named: " + parent_name + " " "not defined."
-            )
+            raise ValueError(f"`HyperParameter` named: {parent_name} not defined.")
 
         condition = conditions_mod.Parent(parent_name, parent_values)
         self._conditions.append(condition)
@@ -663,19 +630,16 @@ class HyperParameters(object):
         if isinstance(hp, HyperParameter):
             return self._conditions_are_active(hp.conditions)
         hp_name = str(hp)
-        for temp_hp in self._hps[hp_name]:
-            if self._conditions_are_active(temp_hp.conditions):
-                return True
-        return False
+        return any(
+            self._conditions_are_active(temp_hp.conditions)
+            for temp_hp in self._hps[hp_name]
+        )
 
     def _conditions_are_active(self, conditions=None):
         if conditions is None:
             conditions = self._conditions
 
-        for condition in conditions:
-            if not condition.is_active(self.values):
-                return False
-        return True
+        return all(condition.is_active(self.values) for condition in conditions)
 
     def _exists(self, name, conditions=None):
         """Checks for a hyperparameter with the same name and conditions."""
@@ -736,9 +700,9 @@ class HyperParameters(object):
         if name in self.values:
             return self.values[name]  # Only active values are added here.
         elif name in self._hps:
-            raise ValueError("{} is currently inactive.".format(name))
+            raise ValueError(f"{name} is currently inactive.")
         else:
-            raise KeyError("{} does not exist.".format(name))
+            raise KeyError(f"{name} does not exist.")
 
     def __getitem__(self, name):
         return self.get(name)
@@ -955,13 +919,10 @@ class HyperParameters(object):
         return self._space
 
     def get_config(self):
-        return {
-            "space": [
+        return {"space": [
                 {"class_name": p.__class__.__name__, "config": p.get_config()}
                 for p in self.space
-            ],
-            "values": dict((k, v) for (k, v) in self.values.items()),
-        }
+            ], "values": dict(self.values.items())}
 
     @classmethod
     def from_config(cls, config):
@@ -970,7 +931,7 @@ class HyperParameters(object):
             p = deserialize(p)
             hps._hps[p.name].append(p)
             hps._space.append(p)
-        hps.values = dict((k, v) for (k, v) in config["values"].items())
+        hps.values = dict(config["values"].items())
         return hps
 
     def copy(self):
@@ -1001,19 +962,32 @@ class HyperParameters(object):
         space = []
         if isinstance(proto, keras_tuner_pb2.HyperParameters.Values):
             # Allows passing in only values, space becomes `Fixed`.
-            for name, value in proto.values.items():
-                space.append(Fixed(name, getattr(value, value.WhichOneof("kind"))))
+            space.extend(
+                Fixed(name, getattr(value, value.WhichOneof("kind")))
+                for name, value in proto.values.items()
+            )
+
         else:
-            for fixed_proto in proto.space.fixed_space:
-                space.append(Fixed.from_proto(fixed_proto))
-            for float_proto in proto.space.float_space:
-                space.append(Float.from_proto(float_proto))
-            for int_proto in proto.space.int_space:
-                space.append(Int.from_proto(int_proto))
-            for choice_proto in proto.space.choice_space:
-                space.append(Choice.from_proto(choice_proto))
-            for boolean_proto in proto.space.boolean_space:
-                space.append(Boolean.from_proto(boolean_proto))
+            space.extend(
+                Fixed.from_proto(fixed_proto)
+                for fixed_proto in proto.space.fixed_space
+            )
+
+            space.extend(
+                Float.from_proto(float_proto)
+                for float_proto in proto.space.float_space
+            )
+
+            space.extend(Int.from_proto(int_proto) for int_proto in proto.space.int_space)
+            space.extend(
+                Choice.from_proto(choice_proto)
+                for choice_proto in proto.space.choice_space
+            )
+
+            space.extend(
+                Boolean.from_proto(boolean_proto)
+                for boolean_proto in proto.space.boolean_space
+            )
 
         hps.merge(space)
 
@@ -1044,7 +1018,7 @@ class HyperParameters(object):
             elif isinstance(hp, Boolean):
                 boolean_space.append(hp.to_proto())
             else:
-                raise ValueError("Unrecognized HP type: {}".format(hp))
+                raise ValueError(f"Unrecognized HP type: {hp}")
 
         values = {}
         for name, value in self.values.items():
@@ -1057,7 +1031,7 @@ class HyperParameters(object):
             elif isinstance(value, bool):
                 val = keras_tuner_pb2.Value(boolean_value=value)
             else:
-                raise ValueError("Unrecognized value type: {}".format(value))
+                raise ValueError(f"Unrecognized value type: {value}")
             values[name] = val
 
         return keras_tuner_pb2.HyperParameters(
@@ -1135,13 +1109,13 @@ def cumulative_prob_to_value(prob, hp):
     if isinstance(hp, Fixed):
         return hp.value
     elif isinstance(hp, Boolean):
-        return bool(prob >= 0.5)
+        return prob >= 0.5
     elif isinstance(hp, Choice):
         ele_prob = 1 / len(hp.values)
         index = int(math.floor(prob / ele_prob))
         # Can happen when `prob` is very close to 1.
         if index == len(hp.values):
-            index = index - 1
+            index -= 1
         return hp.values[index]
     elif isinstance(hp, (Int, Float)):
         sampling = hp.sampling or "linear"
@@ -1156,7 +1130,7 @@ def cumulative_prob_to_value(prob, hp):
                 - hp.min_value * math.pow(hp.max_value / hp.min_value, 1 - prob)
             )
         else:
-            raise ValueError("Unrecognized sampling value: {}".format(sampling))
+            raise ValueError(f"Unrecognized sampling value: {sampling}")
 
         if hp.step is not None:
             values = np.arange(hp.min_value, hp.max_value + 1e-7, step=hp.step)
@@ -1167,7 +1141,7 @@ def cumulative_prob_to_value(prob, hp):
             return int(value)
         return value
     else:
-        raise ValueError("Unrecognized `HyperParameter` type: {}".format(hp))
+        raise ValueError(f"Unrecognized `HyperParameter` type: {hp}")
 
 
 def value_to_cumulative_prob(value, hp):
@@ -1176,9 +1150,7 @@ def value_to_cumulative_prob(value, hp):
         return 0.5
     if isinstance(hp, Boolean):
         # Center the value in its probability bucket.
-        if value:
-            return 0.75
-        return 0.25
+        return 0.75 if value else 0.25
     elif isinstance(hp, Choice):
         ele_prob = 1 / len(hp.values)
         index = hp.values.index(value)
@@ -1199,9 +1171,9 @@ def value_to_cumulative_prob(value, hp):
                 (hp.max_value + hp.min_value - value) / hp.min_value
             ) / math.log(hp.max_value / hp.min_value)
         else:
-            raise ValueError("Unrecognized sampling value: {}".format(sampling))
+            raise ValueError(f"Unrecognized sampling value: {sampling}")
     else:
-        raise ValueError("Unrecognized `HyperParameter` type: {}".format(hp))
+        raise ValueError(f"Unrecognized `HyperParameter` type: {hp}")
 
 
 def _sampling_from_proto(sampling):
@@ -1213,7 +1185,7 @@ def _sampling_from_proto(sampling):
         return "log"
     if sampling == keras_tuner_pb2.Sampling.REVERSE_LOG:
         return "reverse_log"
-    raise ValueError("Unrecognized sampling: {}".format(sampling))
+    raise ValueError(f"Unrecognized sampling: {sampling}")
 
 
 def _sampling_to_proto(sampling):
@@ -1225,7 +1197,7 @@ def _sampling_to_proto(sampling):
         return keras_tuner_pb2.Sampling.LOG
     if sampling == "reverse_log":
         return keras_tuner_pb2.Sampling.REVERSE_LOG
-    raise ValueError("Unrecognized sampling: {}".format(sampling))
+    raise ValueError(f"Unrecognized sampling: {sampling}")
 
 
 def _to_list(values):

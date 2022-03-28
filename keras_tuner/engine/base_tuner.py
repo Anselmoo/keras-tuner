@@ -103,9 +103,7 @@ class BaseTuner(stateful.Stateful):
         self._populate_initial_space()
 
         if not overwrite and tf.io.gfile.exists(self._get_tuner_fname()):
-            tf.get_logger().info(
-                "Reloading Tuner from {}".format(self._get_tuner_fname())
-            )
+            tf.get_logger().info(f"Reloading Tuner from {self._get_tuner_fname()}")
             self.reload()
 
     def _populate_initial_space(self):
@@ -143,7 +141,7 @@ class BaseTuner(stateful.Stateful):
                     scopes_never_active.append(copy.deepcopy(conditions))
 
             # All conditional scopes are activated.
-            if len(scopes_never_active) == 0:
+            if not scopes_never_active:
                 break
 
             # Generate new values to activate new conditions.
@@ -281,8 +279,7 @@ class BaseTuner(stateful.Stateful):
             List of trained models sorted from the best to the worst.
         """
         best_trials = self.oracle.get_best_trials(num_models)
-        models = [self.load_model(trial) for trial in best_trials]
-        return models
+        return [self.load_model(trial) for trial in best_trials]
 
     def get_best_hyperparameters(self, num_trials=1):
         """Returns the best hyperparameters, as determined by the objective.
@@ -321,7 +318,7 @@ class BaseTuner(stateful.Stateful):
         for p in hp.space:
             config = p.get_config()
             name = config.pop("name")
-            print("%s (%s)" % (name, p.__class__.__name__))
+            print(f"{name} ({p.__class__.__name__})")
             print(config)
 
     def results_summary(self, num_trials=10):
@@ -334,9 +331,9 @@ class BaseTuner(stateful.Stateful):
             num_trials: Optional number of trials to display. Defaults to 10.
         """
         print("Results summary")
-        print("Results in %s" % self.project_dir)
+        print(f"Results in {self.project_dir}")
         print("Showing %d best trials" % num_trials)
-        print("{}".format(self.oracle.objective))
+        print(f"{self.oracle.objective}")
 
         best_trials = self.oracle.get_best_trials(num_trials)
         for trial in best_trials:
@@ -376,9 +373,9 @@ class BaseTuner(stateful.Stateful):
         return dirname
 
     def get_trial_dir(self, trial_id):
-        dirname = os.path.join(str(self.project_dir), "trial_" + str(trial_id))
+        dirname = os.path.join(str(self.project_dir), f"trial_{str(trial_id)}")
         utils.create_directory(dirname)
         return dirname
 
     def _get_tuner_fname(self):
-        return os.path.join(str(self.project_dir), str(self.tuner_id) + ".json")
+        return os.path.join(str(self.project_dir), f'{str(self.tuner_id)}.json')

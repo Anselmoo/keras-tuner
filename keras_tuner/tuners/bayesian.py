@@ -55,8 +55,7 @@ def matern_kernel(x, y=None):
     # nu = 2.5
     dists = cdist(x, y)
     dists *= math.sqrt(5)
-    kernel_matrix = (1.0 + dists + dists**2 / 3.0) * np.exp(-dists)
-    return kernel_matrix
+    return (1.0 + dists + dists**2 / 3.0) * np.exp(-dists)
 
 
 class GaussianProcessRegressor(object):
@@ -138,17 +137,16 @@ class GaussianProcessRegressor(object):
         Returns:
             A bool indicates whether all required attributes are present.
         """
-        for attribute in [
-            "_x_train",
-            "_alpha_vector",
-            "_l_matrix",
-            "_y_train_std",
-            "_y_train_mean",
-        ]:
-            if not hasattr(self, attribute):
-                return False
-
-        return True
+        return all(
+            hasattr(self, attribute)
+            for attribute in [
+                "_x_train",
+                "_alpha_vector",
+                "_l_matrix",
+                "_y_train_std",
+                "_y_train_mean",
+            ]
+        )
 
 
 class BayesianOptimizationOracle(oracle_module.Oracle):
@@ -381,9 +379,7 @@ class BayesianOptimizationOracle(oracle_module.Oracle):
         ]
 
     def _get_hp_bounds(self):
-        bounds = []
-        for hp in self._nonfixed_space():
-            bounds.append([0, 1])
+        bounds = [[0, 1] for _ in self._nonfixed_space()]
         return np.array(bounds)
 
 

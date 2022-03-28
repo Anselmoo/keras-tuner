@@ -40,8 +40,7 @@ def test_base_tuner(tmp_path):
 
         def get_best_models(self, num_models=1):
             best_trials = self.oracle.get_best_trials(num_models)
-            models = [self.hypermodel.build(t.hyperparameters) for t in best_trials]
-            return models
+            return [self.hypermodel.build(t.hyperparameters) for t in best_trials]
 
     def build_model(hp):
         class MyModel(object):

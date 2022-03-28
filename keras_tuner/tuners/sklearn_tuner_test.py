@@ -82,8 +82,7 @@ def build_pipeline(hp):
     else:
         raise ValueError("Unrecognized model_type")
 
-    skpipeline = pipeline.Pipeline([("pca", pca), ("clf", model)])
-    return skpipeline
+    return pipeline.Pipeline([("pca", pca), ("clf", model)])
 
 
 def test_sklearn_tuner_simple_with_np(tmp_path):

@@ -40,8 +40,10 @@ def build_model(hp):
     x = inputs
     for i in range(hp.Int("num_layers", 1, 4)):
         x = keras.layers.Dense(
-            units=hp.Int("units_" + str(i), 5, 9, 1, default=6), activation="relu"
+            units=hp.Int(f"units_{str(i)}", 5, 9, 1, default=6),
+            activation="relu",
         )(x)
+
     outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
     model = keras.Model(inputs, outputs)
     model.compile(
@@ -157,9 +159,10 @@ class ExampleHyperModel(keras_tuner.HyperModel):
         x = inputs
         for i in range(hp.Int("num_layers", 1, 4)):
             x = keras.layers.Dense(
-                units=hp.Int("units_" + str(i), 5, 9, 1, default=6),
+                units=hp.Int(f"units_{str(i)}", 5, 9, 1, default=6),
                 activation="relu",
             )(x)
+
         outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
         model = keras.Model(inputs, outputs)
         model.compile(
@@ -457,9 +460,7 @@ def test_static_space(tmp_path):
         inputs = keras.Input(shape=(INPUT_DIM,))
         x = inputs
         for i in range(hp.get("num_layers")):
-            x = keras.layers.Dense(
-                units=hp.get("units_" + str(i)), activation="relu"
-            )(x)
+            x = keras.layers.Dense(units=hp.get(f"units_{str(i)}"), activation="relu")(x)
         outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
         model = keras.Model(inputs, outputs)
         model.compile(
@@ -499,9 +500,7 @@ def test_static_space_errors(tmp_path):
         inputs = keras.Input(shape=(INPUT_DIM,))
         x = inputs
         for i in range(hp.get("num_layers")):
-            x = keras.layers.Dense(
-                units=hp.get("units_" + str(i)), activation="relu"
-            )(x)
+            x = keras.layers.Dense(units=hp.get(f"units_{str(i)}"), activation="relu")(x)
         outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
         model = keras.Model(inputs, outputs)
         model.compile(
@@ -536,9 +535,7 @@ def test_static_space_errors(tmp_path):
         inputs = keras.Input(shape=(INPUT_DIM,))
         x = inputs
         for i in range(hp.get("num_layers")):
-            x = keras.layers.Dense(
-                units=hp.get("units_" + str(i)), activation="relu"
-            )(x)
+            x = keras.layers.Dense(units=hp.get(f"units_{str(i)}"), activation="relu")(x)
         outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
         model = keras.Model(inputs, outputs)
         model.compile(
@@ -1145,7 +1142,7 @@ def test_run_trial_return_float_list(tmp_path):
     class MyTuner(keras_tuner.Tuner):
         def run_trial(self, trial, *fit_args, **fit_kwargs):
             ret = []
-            for i in range(3):
+            for _ in range(3):
                 history = self.hypermodel.build(trial.hyperparameters).fit(
                     *fit_args, **fit_kwargs
                 )
@@ -1370,7 +1367,7 @@ def test_init_build_all_hps_in_all_conditions(tmp_path):
             return super().build(hp)
 
     def name_in_hp(name, hp):
-        return any([name == single_hp.name for single_hp in hp.space])
+        return any(name == single_hp.name for single_hp in hp.space)
 
     class MyTuner(tuner_module.Tuner):
         def _populate_initial_space(self):

@@ -56,12 +56,14 @@ class MetricObservation(object):
         return cls(**config)
 
     def __eq__(self, other):
-        if not isinstance(other, MetricObservation):
-            return False
-        return other.value == self.value and other.step == self.step
+        return (
+            other.value == self.value and other.step == self.step
+            if isinstance(other, MetricObservation)
+            else False
+        )
 
     def __repr__(self):
-        return "MetricObservation(value={}, step={})".format(self.value, self.step)
+        return f"MetricObservation(value={self.value}, step={self.step})"
 
     def to_proto(self):
         return keras_tuner_pb2.MetricObservation(value=self.value, step=self.step)
@@ -98,7 +100,7 @@ class MetricHistory(object):
             self._observations[step] = MetricObservation(value, step=step)
 
     def get_best_value(self):
-        values = list(obs.mean() for obs in self._observations.values())
+        values = [obs.mean() for obs in self._observations.values()]
         if not values:
             return None
         if self.direction == "min":
@@ -135,18 +137,17 @@ class MetricHistory(object):
         }
 
     def get_last_value(self):
-        history = self.get_history()
-        if history:
+        if history := self.get_history():
             last_obs = history[-1]
             return last_obs.mean()
         else:
             return None
 
     def get_config(self):
-        config = {}
-        config["direction"] = self.direction
-        config["observations"] = [obs.get_config() for obs in self.get_history()]
-        return config
+        return {
+            "direction": self.direction,
+            "observations": [obs.get_config() for obs in self.get_history()],
+        }
 
     @classmethod
     def from_config(cls, config):
@@ -196,13 +197,13 @@ class MetricsTracker(object):
 
     def register(self, name, direction=None):
         if self.exists(name):
-            raise ValueError("Metric already exists: %s" % (name,))
+            raise ValueError(f"Metric already exists: {name}")
         if direction is None:
             direction = infer_metric_direction(name)
-            if direction is None:
-                # Objective direction is handled separately, but
-                # non-objective direction defaults to min.
-                direction = "min"
+        if direction is None:
+            # Objective direction is handled separately, but
+            # non-objective direction defaults to min.
+            direction = "min"
         self.metrics[name] = MetricHistory(direction)
 
     def update(self, name, value, step=0):
@@ -214,8 +215,7 @@ class MetricsTracker(object):
         self.metrics[name].update(value, step=step)
         new_best = self.metrics[name].get_best_value()
 
-        improved = new_best != prev_best
-        return improved
+        return new_best != prev_best
 
     def get_history(self, name):
         self._assert_exists(name)
@@ -283,7 +283,7 @@ class MetricsTracker(object):
 
     def _assert_exists(self, name):
         if name not in self.metrics:
-            raise ValueError("Unknown metric: %s" % (name,))
+            raise ValueError(f"Unknown metric: {name}")
 
 
 _MAX_METRICS = (
