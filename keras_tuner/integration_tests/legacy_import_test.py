@@ -20,10 +20,12 @@ def test_kerastuner_same_as_keras_tuner():
         import kerastuner
         from kerastuner.tuners import RandomSearch
         from kerastuner.tuners import BayesianOptimization
+        from kerastuner.tuners import BayesianOptimizationTF
         from kerastuner.tuners import Hyperband
         from kerastuner.tuners import Sklearn  # noqa: F401
         from kerastuner.oracles import RandomSearch  # noqa: F401,F811
         from kerastuner.oracles import BayesianOptimization  # noqa: F401,F811
+        from kerastuner.oracles import BayesianOptimizationTF  # noqa: F401,F811
         from kerastuner.oracles import Hyperband  # noqa: F401,F811
         from kerastuner.engine.base_tuner import BaseTuner  # noqa: F401
         from kerastuner.engine.conditions import Condition  # noqa: F401

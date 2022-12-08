@@ -32,6 +32,7 @@ setup(
         "kt-legacy",
     ],
     extras_require={
+        "benchmark": ["pytest-benchmark"],
         "tests": [
             "black",
             "flake8",
