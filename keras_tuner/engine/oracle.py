@@ -384,6 +384,14 @@ class Oracle(stateful.Stateful):
             value = 1
         self._display.verbose = value
 
+    @property
+    def col_width(self):
+        return self._display.col_width
+
+    @col_width.setter
+    def col_width(self, value):
+        self._display.col_width = value
+
     def _populate_space(self, trial_id):
         warnings.warn(
             "The `_populate_space` method is deprecated, "
